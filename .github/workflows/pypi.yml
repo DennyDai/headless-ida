@@ -4,8 +4,8 @@ on:
       - '*'
 
 jobs:
-  build-n-publish:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI
+  Publish:
+    name: Publish to PyPI
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
@@ -28,7 +28,7 @@ jobs:
         --wheel
         --outdir dist/
         .
-    - name: Publish distribution 📦 to PyPI
+    - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
