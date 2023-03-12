@@ -16,7 +16,7 @@ class HeadlessIda():
             f'{idat_path} -A -S"{server_path} {port}" -P+ {binary_path}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
             if p.poll() is not None:
-                raise Exception(f"IDA failed to start\n{p.stderr.read().decode()}")
+                raise Exception(f"IDA failed to start: return code {p.poll()}\n{p.stderr.read().decode()}")
             try:
                 self.conn = rpyc.connect("localhost", port)
             except:

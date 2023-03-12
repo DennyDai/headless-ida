@@ -1,11 +1,16 @@
 import rpyc
 import importlib
+import ida_auto
 import ida_loader
 import ida_pro
 import idc
 
 
 class HeadlessIda(rpyc.Service):
+    def __init__(self):
+        super().__init__()
+        ida_auto.auto_wait()
+
     def on_connect(self, conn):
         ida_loader.set_database_flag(ida_loader.DBFL_KILL)
 
