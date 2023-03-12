@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "headless-ida"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
     "rpyc",
 ]
@@ -22,5 +22,5 @@ homepage = "https://github.com/DennyDai/headless-ida"
 documentation = "https://github.com/DennyDai/headless-ida"
 repository = "https://github.com/DennyDai/headless-ida"
 
-[tool.setuptools.packages]
-find = {}
+[tool.setuptools.packages.find]
+include = ["headless_ida"]
