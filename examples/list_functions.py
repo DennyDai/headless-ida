@@ -1,5 +1,7 @@
+import os
 from headless_ida import HeadlessIda
-headlessida = HeadlessIda("/path/to/idat64", "/path/to/binary")
+
+headlessida = HeadlessIda(os.getenv("IDAT_PATH"), "./ls")
 
 idautils = headlessida.import_module("idautils")
 ida_name = headlessida.import_module("ida_name")
