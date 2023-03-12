@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "headless-ida"
+version = "0.1.2"
+dependencies = [
+    "rpyc",
+]
+readme = "README.md"
+description = "Headless IDA"
+
+[tool.setuptools.packages]
+find = {}
