@@ -26,5 +26,5 @@ for func in idautils.Functions():
 ```
 
 # Resources
-- Headless IDA Examples: [examples](examples)
-- IDAPython Documentation: [IDAPython](https://www.hex-rays.com/products/ida/support/idapython_docs/)
+- [Headless IDA Examples](https://github.com/DennyDai/headless-ida/tree/main/examples)
+- [IDAPython Documentation](https://www.hex-rays.com/products/ida/support/idapython_docs/)
