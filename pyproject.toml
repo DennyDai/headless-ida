@@ -4,12 +4,23 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "headless-ida"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
     "rpyc",
 ]
 readme = "README.md"
 description = "Headless IDA"
+authors = [
+    {name = "Han Dai", email = "pypi@han.do"},
+]
+license = {file = "LICENSE"}
+keywords = ["ida", "headless", "idapro", "hexrays"]
+requires-python = ">=3"
+
+[project.urls]
+homepage = "https://github.com/DennyDai/headless-ida"
+documentation = "https://github.com/DennyDai/headless-ida"
+repository = "https://github.com/DennyDai/headless-ida"
 
 [tool.setuptools.packages]
 find = {}
