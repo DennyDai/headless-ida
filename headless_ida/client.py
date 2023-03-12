@@ -12,9 +12,11 @@ class HeadlessIda():
         with socket.socket() as s:
             s.bind(('', 0))
             port = s.getsockname()[1]
-        subprocess.Popen(
-            f'{idat_path} -A -S"{server_path} {port}" -P+ {binary_path}', shell=True)
+        p = subprocess.Popen(
+            f'{idat_path} -A -S"{server_path} {port}" -P+ {binary_path}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
+            if p.poll() is not None:
+                raise Exception(f"IDA failed to start\n{p.stderr.read().decode()}")
             try:
                 self.conn = rpyc.connect("localhost", port)
             except:
@@ -25,4 +27,5 @@ class HeadlessIda():
         return self.conn.root.import_module(mod)
 
     def __del__(self):
-        self.conn.close()
+        if hasattr(self, "conn"):
+            self.conn.close()
