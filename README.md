@@ -13,6 +13,8 @@ pip install headless-ida
 ```
 
 # Usage
+
+## Use it as a normal Python module.
 ```python
 # Initialize HeadlessIda
 from headless_ida import HeadlessIda
@@ -25,6 +27,27 @@ import ida_name
 # Have Fun
 for func in idautils.Functions():
     print(f"{hex(func)} {ida_name.get_ea_name(func)}")
+```
+
+## Use it as a command line tool.
+```bash
+# Interactive Console
+$ headless-ida /path/to/idat64 /path/to/binary
+Python 3.8.10 (default, Nov 14 2022, 12:59:47) 
+[GCC 9.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+(InteractiveConsole)
+>>> import idautils
+>>> list(idautils.Functions())[0:10]
+[16384, 16416, 16432, 16448, 16464, 16480, 16496, 16512, 16528, 16544]
+>>> 
+
+# Run IDAPython Script
+$ headless-ida /path/to/idat64 /path/to/binary -c idascript.py
+
+# One-liner
+$ headless-ida /path/to/idat64 /path/to/binary -c "import idautils; print(list(idautils.Functions())[0:10])"
+[16384, 16416, 16432, 16448, 16464, 16480, 16496, 16512, 16528, 16544]
 ```
 
 # Resources
