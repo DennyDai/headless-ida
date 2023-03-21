@@ -1,8 +1,3 @@
-import os
-from headless_ida import HeadlessIda
-
-headlessida = HeadlessIda(os.getenv("IDAT_PATH"), "./ls")
-
 import idautils, ida_name, ida_funcs
 
 def search_string(search):
