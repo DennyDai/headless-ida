@@ -18,9 +18,9 @@ pip install headless-ida
 from headless_ida import HeadlessIda
 headlessida = HeadlessIda("/path/to/idat64", "/path/to/binary")
 
-# Import IDA Modules
-idautils = headlessida.import_module("idautils")
-ida_name = headlessida.import_module("ida_name")
+# Import IDA Modules (make sure you have initialized HeadlessIda first)
+import idautils
+import ida_name
 
 # Have Fun
 for func in idautils.Functions():

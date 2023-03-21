@@ -3,9 +3,7 @@ from headless_ida import HeadlessIda
 
 headlessida = HeadlessIda(os.getenv("IDAT_PATH"), "./ls")
 
-idautils = headlessida.import_module("idautils")
-ida_hexrays = headlessida.import_module("ida_hexrays")
-ida_funcs = headlessida.import_module("ida_funcs")
+import idautils, ida_funcs, ida_hexrays
 
 def get_function_by_name(name):
     for ea in idautils.Functions():

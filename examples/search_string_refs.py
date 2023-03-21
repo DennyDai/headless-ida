@@ -3,9 +3,7 @@ from headless_ida import HeadlessIda
 
 headlessida = HeadlessIda(os.getenv("IDAT_PATH"), "./ls")
 
-idautils = headlessida.import_module("idautils")
-ida_funcs = headlessida.import_module("ida_funcs")
-ida_name = headlessida.import_module("ida_name")
+import idautils, ida_name, ida_funcs
 
 def search_string(search):
     result = {}
