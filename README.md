@@ -42,12 +42,17 @@ Type "help", "copyright", "credits" or "license" for more information.
 [16384, 16416, 16432, 16448, 16464, 16480, 16496, 16512, 16528, 16544]
 >>> 
 
+
 # Run IDAPython Script
-$ headless-ida /path/to/idat64 /path/to/binary -c idascript.py
+$ headless-ida /path/to/idat64 /path/to/binary idascript.py
+
 
 # One-liner
 $ headless-ida /path/to/idat64 /path/to/binary -c "import idautils; print(list(idautils.Functions())[0:10])"
-[16384, 16416, 16432, 16448, 16464, 16480, 16496, 16512, 16528, 16544]
+
+
+# In case you like IPython
+$ headless-ida /path/to/idat64 /path/to/binary -c "import IPython; IPython.embed();"
 ```
 
 # Resources
