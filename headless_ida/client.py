@@ -30,7 +30,7 @@ class HeadlessIda():
 
     def __init__(self, idat_path, binary_path, override_import=True):
         server_path = os.path.join(os.path.realpath(
-            os.path.dirname(__file__)), "server.py")
+            os.path.dirname(__file__)), "ida_script.py")
         port = 8000
         with socket.socket() as s:
             s.bind(('', 0))
@@ -39,7 +39,8 @@ class HeadlessIda():
             f'{idat_path} -A -S"{server_path} {port}" -P+ {binary_path}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
             if p.poll() is not None:
-                raise Exception(f"IDA failed to start: return code {p.poll()}\n{p.stderr.read().decode()}")
+                raise Exception(
+                    f"IDA failed to start: return code {p.poll()}\n{p.stderr.read().decode()}")
             try:
                 self.conn = rpyc.connect("localhost", port)
             except:
@@ -51,6 +52,7 @@ class HeadlessIda():
 
     def override_import(self):
         original_import = builtins.__import__
+
         def ida_import(name, *args, **kwargs):
             if name in self.IDA_MODULES:
                 return self.import_module(name)
@@ -63,3 +65,12 @@ class HeadlessIda():
     def __del__(self):
         if hasattr(self, "conn"):
             self.conn.close()
+
+
+class HeadlessIdaRemote(HeadlessIda):
+    def __init__(self, host, port, binary_path, override_import=True):
+        self.conn = rpyc.connect(host, int(port))
+        with open(binary_path, "rb") as f:
+            self.conn.root.init(f.read())
+        if override_import:
+            self.override_import()

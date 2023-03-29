@@ -14,7 +14,7 @@ pip install headless-ida
 
 # Usage
 
-## Use it as a normal Python module.
+### Use it as a normal Python module.
 ```python
 # Initialize HeadlessIda
 from headless_ida import HeadlessIda
@@ -29,7 +29,7 @@ for func in idautils.Functions():
     print(f"{hex(func)} {ida_name.get_ea_name(func)}")
 ```
 
-## Use it as a command line tool.
+### Use it as a command line tool.
 ```bash
 # Interactive Console
 $ headless-ida /path/to/idat64 /path/to/binary
@@ -54,6 +54,40 @@ $ headless-ida /path/to/idat64 /path/to/binary -c "import idautils; print(list(i
 # In case you like IPython
 $ headless-ida /path/to/idat64 /path/to/binary -c "import IPython; IPython.embed();"
 ```
+
+# Advanced Usage
+## Remote Server
+
+### Start a Headless IDA server
+```bash
+$ headless-ida-server /path/to/idat64 1337 &
+```
+
+### Connect to the server in Python script
+```python
+# Initialize HeadlessIda
+from headless_ida import HeadlessIdaRemote
+headlessida = HeadlessIdaRemote("localhost", 1337, "/path/to/local/binary")
+
+# Import IDA Modules (make sure you have initialized HeadlessIda first)
+import idautils
+import ida_name
+
+# Have Fun
+for func in idautils.Functions():
+    print(f"{hex(func)} {ida_name.get_ea_name(func)}")
+```
+
+### Connect to the server in command line
+```bash
+# Interactive Console
+$ headless-ida localhost:1337 /path/to/binary
+# Run IDAPython Script
+$ headless-ida localhost:1337 /path/to/binary idascript.py
+# One-liner
+$ headless-ida localhost:1337 /path/to/binary -c "import idautils; print(list(idautils.Functions())[0:10])"
+```
+
 
 # Resources
 - [Headless IDA Examples](https://github.com/DennyDai/headless-ida/tree/main/examples)

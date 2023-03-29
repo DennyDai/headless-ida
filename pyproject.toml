@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "headless-ida"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
     "rpyc",
 ]
@@ -18,7 +18,8 @@ keywords = ["ida", "headless", "idapro", "hexrays"]
 requires-python = ">=3"
 
 [project.scripts]
-headless-ida = "headless_ida:main_cli"
+headless-ida = "headless_ida:headlessida_cli"
+headless-ida-server = "headless_ida:headlessida_server_cli"
 
 [project.urls]
 homepage = "https://github.com/DennyDai/headless-ida"
