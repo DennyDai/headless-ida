@@ -60,7 +60,7 @@ $ headless-ida /path/to/idat64 /path/to/binary -c "import IPython; IPython.embed
 
 ### Start a Headless IDA server
 ```bash
-$ headless-ida-server /path/to/idat64 1337 &
+$ headless-ida-server /path/to/idat64 localhost 1337 &
 ```
 
 ### Connect to the server in Python script

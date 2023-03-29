@@ -34,9 +34,10 @@ def headlessida_cli():
 def headlessida_server_cli():
     parser = argparse.ArgumentParser(description='Headless IDA Server')
     parser.add_argument('idat_path', help='Path to IDA Pro TUI executable')
+    parser.add_argument('host', help='Host to bind to')
     parser.add_argument('port', type=int, help='Port to listen on')
 
     args = parser.parse_args()
 
-    ThreadedServer(HeadlessIdaServer(args.idat_path), port=args.port,
+    ThreadedServer(HeadlessIdaServer(args.idat_path), hostname=args.host, port=args.port,
                    protocol_config={"allow_all_attrs": True}).start()
