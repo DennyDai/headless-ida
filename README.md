@@ -81,11 +81,11 @@ for func in idautils.Functions():
 ### Connect to the server in command line
 ```bash
 # Interactive Console
-$ headless-ida localhost:1337 /path/to/binary
+$ headless-ida localhost:1337 /path/to/local/binary
 # Run IDAPython Script
-$ headless-ida localhost:1337 /path/to/binary idascript.py
+$ headless-ida localhost:1337 /path/to/local/binary idascript.py
 # One-liner
-$ headless-ida localhost:1337 /path/to/binary -c "import idautils; print(list(idautils.Functions())[0:10])"
+$ headless-ida localhost:1337 /path/to/local/binary -c "import idautils; print(list(idautils.Functions())[0:10])"
 ```
 
 
