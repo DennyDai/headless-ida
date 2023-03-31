@@ -26,7 +26,8 @@ class HeadlessIda():
                    "ida_tryblks", "ida_typeinf",
                    "ida_ua",
                    "ida_xref",
-                   "idc", "idautils"
+                   "idc", "idautils",
+                   "idaapi",
                    ]
 
     def __init__(self, idat_path, binary_path, override_import=True):
