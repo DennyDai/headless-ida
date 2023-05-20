@@ -94,4 +94,5 @@ $ headless-ida localhost:1337 /path/to/local/binary -c "import idautils; print(l
 
 # Resources
 - [Headless IDA Examples](https://github.com/DennyDai/headless-ida/tree/main/examples)
-- [IDAPython Documentation](https://www.hex-rays.com/products/ida/support/idapython_docs/)
+- [IDAPython Official Documentation](https://www.hex-rays.com/products/ida/support/idapython_docs/)
+- [IDAPython Official Examples](https://github.com/idapython/src/tree/master/examples)
