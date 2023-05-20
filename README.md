@@ -24,6 +24,9 @@ headlessida = HeadlessIda("/path/to/idat64", "/path/to/binary")
 import idautils
 import ida_name
 
+# Or Import All IDA Modules at Once (idaapi is not imported by default)
+# from headless_ida.ida_headers import *
+
 # Have Fun
 for func in idautils.Functions():
     print(f"{hex(func)} {ida_name.get_ea_name(func)}")
