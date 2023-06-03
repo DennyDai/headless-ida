@@ -12,5 +12,5 @@ def decompile_function(ea):
         return None
     return str(cfunc)
 
-print(decompile_function(get_function_by_name("sub_15AA0")))
+print(decompile_function(get_function_by_name("main")))
 
