@@ -1,3 +1,6 @@
+
+# run with `headless-ida /path/to/idat64 /bin/ls search_string_refs.py`
+
 import idautils, ida_name, ida_funcs
 
 def search_string(search):

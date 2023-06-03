@@ -1,3 +1,6 @@
+
+# run with `headless-ida /path/to/idat64 /bin/ls decompile_main.py`
+
 import idautils, ida_funcs, ida_hexrays
 
 def get_function_by_name(name):
