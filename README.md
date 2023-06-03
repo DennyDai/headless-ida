@@ -96,3 +96,8 @@ $ headless-ida localhost:1337 /path/to/local/binary -c "import idautils; print(l
 - [Headless IDA Examples](https://github.com/DennyDai/headless-ida/tree/main/examples)
 - [IDAPython Official Documentation](https://www.hex-rays.com/products/ida/support/idapython_docs/)
 - [IDAPython Official Examples](https://github.com/idapython/src/tree/master/examples)
+
+# Known Issues
+### `from XXX import *`
+ - Using `from XXX import *` syntax with certain ida modules (like idaapi, ida_ua, etc.) is currently unsupported due to SWIG and RPyC compatibility issues. We recommend importing specific items with `from XXX import YYY, ZZZ`, or importing the entire module using `import XXX`.
+ - The issue arises because SWIG, employed for creating Python bindings for C/C++ code, generates intermediary objects (SwigVarlink) that RPyC, our remote procedure call mechanism, cannot serialize or transmit correctly.
