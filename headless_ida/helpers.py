@@ -9,7 +9,7 @@ def escape_path(path):
         _GetShortPathName.restype = ctypes.c_uint
 
         buffer = ctypes.create_unicode_buffer(len(path) + 1)
-        if _GetShortPathName(long_path, buffer, len(buffer)):
+        if _GetShortPathName(path, buffer, len(buffer)):
             return buffer.value
         else:
             raise Exception("Failed to get short path")
