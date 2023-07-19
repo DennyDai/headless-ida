@@ -3,6 +3,7 @@ import socket
 import os
 import subprocess
 import tempfile
+import site
 
 from .helpers import escape_path
 
@@ -23,6 +24,7 @@ def HeadlessIdaServer(idat_path):
                 s.bind(('', 0))
                 port = s.getsockname()[1]
             tempidb = tempfile.NamedTemporaryFile(suffix=".idb")
+            os.environ["PYTHONPATH"] = os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()]) + os.pathsep + os.environ.get("PYTHONPATH", "")
             command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
             p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             while True:
