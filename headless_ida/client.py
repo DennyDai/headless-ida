@@ -5,6 +5,8 @@ import subprocess
 import builtins
 import tempfile
 
+from .helpers import escape_path
+
 
 class HeadlessIda():
     IDA_MODULES = ["ida_allins", "ida_auto",
@@ -39,7 +41,7 @@ class HeadlessIda():
             port = s.getsockname()[1]
         tempidb = tempfile.NamedTemporaryFile(suffix=".idb")
         p = subprocess.Popen(
-            f'{idat_path} -o{tempidb.name} -A -S"{server_path} {port}" -P+ {binary_path}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            f'{idat_path} -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ {binary_path}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
             if p.poll() is not None:
                 raise Exception(
