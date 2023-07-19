@@ -23,7 +23,7 @@ def HeadlessIdaServer(idat_path):
                 s.bind(('', 0))
                 port = s.getsockname()[1]
             tempidb = tempfile.NamedTemporaryFile(suffix=".idb")
-            command = f'{idat_path} -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ {binary_path}'
+            command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
             p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             while True:
                 if p.poll() is not None:
