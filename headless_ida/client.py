@@ -40,12 +40,13 @@ class HeadlessIda():
             s.bind(('', 0))
             port = s.getsockname()[1]
         tempidb = tempfile.NamedTemporaryFile(suffix=".idb")
-        p = subprocess.Popen(
-            f'{idat_path} -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ {binary_path}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        command = f'{idat_path} -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ {binary_path}'
+        p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
             if p.poll() is not None:
                 raise Exception(
                     f"IDA failed to start: return code {p.poll()}\n"
+                    f"Command: {command}\n"
                     f"=============== STDOUT ===============\n{p.stdout.read().decode()}"
                     f"=============== STDERR ===============\n{p.stderr.read().decode()}"
                 )
