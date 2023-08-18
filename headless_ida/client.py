@@ -40,9 +40,17 @@ class HeadlessIda():
         with socket.socket() as s:
             s.bind(('', 0))
             port = s.getsockname()[1]
-        tempidb = tempfile.NamedTemporaryFile(suffix=".idb")
+        is_64bit = idat_path.endswith("64")
+        tempidb = tempfile.NamedTemporaryFile(suffix=".i64" if is_64bit else ".idb")
         os.environ["PYTHONPATH"] = os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()]) + os.pathsep + os.environ.get("PYTHONPATH", "")
-        command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
+        if binary_path.endswith(".i64") or binary_path.endswith(".idb"):
+            with open(binary_path, "rb") as f:
+                tempidb.write(f.read())
+            tempidb.flush()
+            binary_path = tempidb.name
+            command = f'"{idat_path}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
+        else:
+            command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
             if p.poll() is not None:
