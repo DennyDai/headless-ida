@@ -27,4 +27,4 @@ documentation = "https://github.com/DennyDai/headless-ida"
 repository = "https://github.com/DennyDai/headless-ida"
 
 [tool.setuptools.packages.find]
-include = ["headless_ida"]
+where = ["src"]
