@@ -1,5 +1,15 @@
 import os
 import ctypes
+import sys
+import rpyc
+
+
+class ForwardIO(rpyc.Service):
+    def exposed_stdout_write(self, data):
+        print(data, end="", file=sys.stdout)
+
+    def exposed_stderr_write(self, data):
+        print(data, end="", file=sys.stderr)
 
 
 def escape_path(path):
@@ -14,4 +24,4 @@ def escape_path(path):
         else:
             raise Exception("Failed to get short path")
     else:
-        return f"\\\"{path}\\\""
+        return f'\\"{path}\\"'

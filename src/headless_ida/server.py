@@ -4,8 +4,9 @@ import os
 import subprocess
 import tempfile
 import site
+import sys
 
-from .helpers import escape_path
+from .helpers import escape_path, ForwardIO
 
 
 def HeadlessIdaServer(idat_path):
@@ -44,7 +45,7 @@ def HeadlessIdaServer(idat_path):
                         f"=============== STDERR ===============\n{p.stderr.read().decode()}"
                     )
                 try:
-                    self.conn = rpyc.connect("localhost", port)
+                    self.conn = rpyc.connect("localhost", port, service=ForwardIO)
                 except:
                     continue
                 break
@@ -52,7 +53,14 @@ def HeadlessIdaServer(idat_path):
         def exposed_import_module(self, mod):
             return self.conn.root.import_module(mod)
 
+        def on_connect(self, conn):
+            sys.stdout.write = conn.root.stdout_write
+            sys.stderr.write = conn.root.stderr_write
+
         def on_disconnect(self, conn):
             if hasattr(self, "conn"):
                 self.conn.close()
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+
     return _HeadlessIdaServer

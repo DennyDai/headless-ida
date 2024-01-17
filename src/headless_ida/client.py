@@ -6,7 +6,7 @@ import builtins
 import tempfile
 import site
 
-from .helpers import escape_path
+from .helpers import escape_path, ForwardIO
 
 
 class HeadlessIda():
@@ -61,7 +61,7 @@ class HeadlessIda():
                     f"=============== STDERR ===============\n{p.stderr.read().decode()}"
                 )
             try:
-                self.conn = rpyc.connect("localhost", port)
+                self.conn = rpyc.connect("localhost", port, service=ForwardIO)
             except:
                 continue
             break
@@ -88,7 +88,7 @@ class HeadlessIda():
 
 class HeadlessIdaRemote(HeadlessIda):
     def __init__(self, host, port, binary_path, override_import=True):
-        self.conn = rpyc.connect(host, int(port))
+        self.conn = rpyc.connect(host, int(port), service=ForwardIO)
         with open(binary_path, "rb") as f:
             self.conn.root.init(f.read())
         if override_import:
