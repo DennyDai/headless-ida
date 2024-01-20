@@ -33,7 +33,7 @@ def HeadlessIdaServer(idat_path):
                 binary_path = tempidb.name
                 command = f'"{idat_path}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
             else:
-                tempidb = tempfile.NamedTemporaryFile(suffix=".idb")
+                tempidb = tempfile.NamedTemporaryFile()
                 command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
             p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             while True:
