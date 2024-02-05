@@ -45,7 +45,7 @@ def HeadlessIdaServer(idat_path):
                         f"=============== STDERR ===============\n{p.stderr.read().decode()}"
                     )
                 try:
-                    self.conn = rpyc.connect("localhost", port, service=ForwardIO)
+                    self.conn = rpyc.connect("localhost", port, service=ForwardIO, config={"sync_request_timeout": 60*60*24})
                 except:
                     continue
                 break

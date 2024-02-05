@@ -61,7 +61,7 @@ class HeadlessIda():
                     f"=============== STDERR ===============\n{p.stderr.read().decode()}"
                 )
             try:
-                self.conn = rpyc.connect("localhost", port, service=ForwardIO)
+                self.conn = rpyc.connect("localhost", port, service=ForwardIO, config={"sync_request_timeout": 60*60*24})
             except:
                 continue
             break
@@ -88,7 +88,7 @@ class HeadlessIda():
 
 class HeadlessIdaRemote(HeadlessIda):
     def __init__(self, host, port, binary_path, override_import=True):
-        self.conn = rpyc.connect(host, int(port), service=ForwardIO)
+        self.conn = rpyc.connect(host, int(port), service=ForwardIO, config={"sync_request_timeout": 60*60*24})
         with open(binary_path, "rb") as f:
             self.conn.root.init(f.read())
         if override_import:
