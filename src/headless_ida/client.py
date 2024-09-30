@@ -1,12 +1,17 @@
-import rpyc
-import socket
-import os
-import subprocess
 import builtins
-import tempfile
+import os
+import platform
+import shutil
 import site
+import socket
+import subprocess
+import sys
+import tempfile
+from ctypes import cdll
 
-from .helpers import escape_path, ForwardIO
+import rpyc
+
+from .helpers import ForwardIO, escape_path
 
 
 class HeadlessIda():
@@ -33,7 +38,67 @@ class HeadlessIda():
                    "idaapi",
                    ]
 
-    def __init__(self, idat_path, binary_path, override_import=True):
+    IDA_BINARY_NAMES = {
+        "Windows": {
+            "idalib64": "idalib64.dll",
+            "ida64": "ida64.exe",
+            "idat64": "idat64.exe",
+            "idat": "idat.exe",
+            "ida": "ida.exe",
+        },
+        "Linux": {
+            "idalib64": "libidalib64.so",
+            "ida64": "ida64",
+            "idat64": "idat64",
+            "idat": "idat",
+            "ida": "ida",
+        },
+        "Darwin": {
+            "idalib64": "libidalib64.dylib",
+            "ida64": "ida64",
+            "idat64": "idat64",
+            "idat": "idat",
+            "ida": "ida",
+        },
+    }
+
+    def __init__(self, ida_dir, binary_path, override_import=True, bits=64):
+        binary_names = self.IDA_BINARY_NAMES[platform.system()]
+        self.backend = None
+
+        if os.path.isfile(ida_dir):
+            filename = os.path.basename(ida_dir)
+            if filename == binary_names["idalib64"]:
+                return self._idalib_backend(ida_dir, binary_path, override_import)
+            if filename in [binary_names[key] for key in ["ida64", "idat64", "ida", "idat"]]:
+                return self._ida_backend(ida_dir, binary_path, override_import)
+
+        if os.path.isdir(ida_dir):
+            idalib64_path = os.path.join(ida_dir, binary_names["idalib64"])
+            if os.path.exists(idalib64_path):
+                return self._idalib_backend(idalib64_path, binary_path, override_import)
+            
+            idat_key = "idat64" if bits == 64 else "idat"
+            idat_path = os.path.join(ida_dir, binary_names[idat_key])
+            return self._ida_backend(idat_path, binary_path, override_import)
+
+        raise Exception("Invalid IDA directory")
+
+    def _idalib_backend(self, idalib_path, binary_path, override_import=True):
+        assert self.backend is None
+        self.backend = "idalib"
+        sys.path.insert(0, os.path.join(os.path.dirname(idalib_path), "python/3/ida_64"))
+        sys.path.insert(1, os.path.join(os.path.dirname(idalib_path), "python/3"))
+        self.libida = cdll.LoadLibrary(idalib_path)
+        self.libida.init_library(0, None)
+        # TODO: idalib doesn't support saving database to other location, so we need to copy the file manually
+        tempdir = tempfile.mkdtemp()
+        shutil.copy(binary_path, tempdir)
+        self.libida.open_database(str(os.path.join(tempdir, os.path.basename(binary_path))).encode(), True)
+
+    def _ida_backend(self, idat_path, binary_path, override_import=True):
+        assert self.backend is None
+        self.backend = "ida"
         server_path = os.path.join(os.path.realpath(
             os.path.dirname(__file__)), "ida_script.py")
         port = 8000
@@ -82,8 +147,11 @@ class HeadlessIda():
         return self.conn.root.import_module(mod)
 
     def __del__(self):
-        if hasattr(self, "conn"):
-            self.conn.close()
+        if self.backend == "idalib":
+            self.libida.close_database(0)
+        if self.backend == "ida":
+            if hasattr(self, "conn"):
+                self.conn.close()
 
 
 class HeadlessIdaRemote(HeadlessIda):
