@@ -1,10 +1,9 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=43.0.0", "setuptools_scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "headless-ida"
-version = "0.0.0"
 dependencies = [
     "rpyc",
 ]
@@ -16,6 +15,7 @@ authors = [
 license = {file = "LICENSE"}
 keywords = ["ida", "headless", "idapro", "hexrays"]
 requires-python = ">=3"
+dynamic = ["version"]
 
 [project.scripts]
 headless-ida = "headless_ida:headlessida_cli"
@@ -28,3 +28,6 @@ repository = "https://github.com/DennyDai/headless-ida"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools_scm]
+version_file = "src/headless_ida/_version.py"
