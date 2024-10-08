@@ -22,11 +22,6 @@ jobs:
         pip install
         build
         --user
-    - name: Update version in pyproject.toml
-      run: >-
-        sed -i
-        "s/^version = \".*\"/version = \"${{ github.ref_name }}\"/"
-        pyproject.toml
     - name: Build a binary wheel and a source tarball
       run: >-
         python -m
