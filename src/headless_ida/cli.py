@@ -1,5 +1,6 @@
 import argparse
 import code
+
 from rpyc.utils.server import ThreadedServer
 from . import HeadlessIda, HeadlessIdaRemote, HeadlessIdaServer
 
@@ -10,6 +11,9 @@ def headlessida_cli():
         'idat_path', help='Path to IDA Pro TUI executable / Host:Port of remote HeadlessIDA server')
     parser.add_argument('binary_path', help='Path to binary to analyze')
     parser.add_argument('script_path', nargs='?', help='Path to script to run')
+    parser.add_argument('-f', '--ftype', nargs='?',
+                        help='interpret the input file as the specified file type The file type is specified as a '
+                             'prefix of a file type visible in the "load file" dialog box')
     parser.add_argument('-c', '--command', help='Command to run after script')
 
     args = parser.parse_args()
@@ -18,7 +22,7 @@ def headlessida_cli():
         host, port = args.idat_path.split(":")
         headlessida = HeadlessIdaRemote(host, int(port), args.binary_path)
     else:
-        headlessida = HeadlessIda(args.idat_path, args.binary_path)
+        headlessida = HeadlessIda(args.idat_path, args.binary_path, ftype=args.ftype)
     headlessida_dict = {"headlessida": headlessida, "HeadlessIda": HeadlessIda}
 
     if args.script_path:

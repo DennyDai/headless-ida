@@ -10,6 +10,7 @@ import tempfile
 from ctypes import cdll
 
 import rpyc
+from typing import Optional
 
 from .helpers import ForwardIO, escape_path
 
@@ -62,29 +63,29 @@ class HeadlessIda():
         },
     }
 
-    def __init__(self, ida_dir, binary_path, override_import=True, bits=64):
+    def __init__(self, ida_dir, binary_path, override_import=True, bits=64, ftype: Optional[str] = None) -> None:
         binary_names = self.IDA_BINARY_NAMES[platform.system()]
         self.backend = None
 
         if os.path.isfile(ida_dir):
             filename = os.path.basename(ida_dir)
             if filename == binary_names["idalib64"]:
-                return self._idalib_backend(ida_dir, binary_path, override_import)
+                return self._idalib_backend(ida_dir, binary_path, override_import, ftype=ftype)
             if filename in [binary_names[key] for key in ["ida64", "idat64", "ida", "idat"]]:
-                return self._ida_backend(ida_dir, binary_path, override_import)
+                return self._ida_backend(ida_dir, binary_path, override_import, ftype=ftype)
 
         if os.path.isdir(ida_dir):
             idalib64_path = os.path.join(ida_dir, binary_names["idalib64"])
             if os.path.exists(idalib64_path):
-                return self._idalib_backend(idalib64_path, binary_path, override_import)
-            
+                return self._idalib_backend(idalib64_path, binary_path, override_import, ftype=ftype)
+
             idat_key = "idat64" if bits == 64 else "idat"
             idat_path = os.path.join(ida_dir, binary_names[idat_key])
-            return self._ida_backend(idat_path, binary_path, override_import)
+            return self._ida_backend(idat_path, binary_path, override_import, ftype=ftype)
 
         raise Exception("Invalid IDA directory")
 
-    def _idalib_backend(self, idalib_path, binary_path, override_import=True):
+    def _idalib_backend(self, idalib_path, binary_path, override_import=True, ftype: Optional[str] = None):
         assert self.backend is None
         self.backend = "idalib"
         sys.path.insert(0, os.path.join(os.path.dirname(idalib_path), "python/3/ida_64"))
@@ -96,7 +97,7 @@ class HeadlessIda():
         shutil.copy(binary_path, tempdir)
         self.libida.open_database(str(os.path.join(tempdir, os.path.basename(binary_path))).encode(), True)
 
-    def _ida_backend(self, idat_path, binary_path, override_import=True):
+    def _ida_backend(self, idat_path, binary_path, override_import=True, ftype: Optional[str] = None) -> None:
         assert self.backend is None
         self.backend = "ida"
         server_path = os.path.join(os.path.realpath(
@@ -115,7 +116,9 @@ class HeadlessIda():
             command = f'"{idat_path}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
         else:
             tempidb = tempfile.NamedTemporaryFile()
-            command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
+            command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" "{binary_path}"'
+        if ftype is not None:
+            command += f' -T "{ftype}"'
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
             if p.poll() is not None:
