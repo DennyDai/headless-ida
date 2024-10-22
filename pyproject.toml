@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=43.0.0", "setuptools_scm>=8", "wheel"]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -30,4 +30,4 @@ repository = "https://github.com/DennyDai/headless-ida"
 where = ["src"]
 
 [tool.setuptools_scm]
-version_file = "src/headless_ida/_version.py"
+# empty
