@@ -14,6 +14,9 @@ pip install headless-ida
 
 # Usage
 
+> [!TIP]
+> Headless IDA supports the latest [idalib](https://docs.hex-rays.com/user-guide/idalib). Just provide the idalib path instead of idat64 to use it as the backend.
+
 ### Use it as a normal Python module.
 ```python
 # Initialize HeadlessIda
