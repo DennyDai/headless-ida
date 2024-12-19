@@ -97,9 +97,8 @@ $ headless-ida localhost:1337 /path/to/local/binary -c "import idautils; print(l
 
 # Resources
 - [Headless IDA Examples](https://github.com/DennyDai/headless-ida/tree/main/examples)
-- [IDAPython Official Documentation](https://www.hex-rays.com/products/ida/support/idapython_docs/)
-- [IDAPython Official Examples](https://github.com/idapython/src/tree/master/examples)
-
+- [IDAPython Official Documentation](https://docs.hex-rays.com/developer-guide/idapython)
+- IDAPython Official Examples: [1](https://docs.hex-rays.com/developer-guide/idapython/idapython-examples), [2](https://github.com/idapython/src/tree/master/examples)
 # Known Issues
 ### `from XXX import *`
  - Using `from XXX import *` syntax with certain ida modules (like idaapi, ida_ua, etc.) is currently unsupported due to SWIG and RPyC compatibility issues. We recommend importing specific items with `from XXX import YYY, ZZZ`, or importing the entire module using `import XXX`.
