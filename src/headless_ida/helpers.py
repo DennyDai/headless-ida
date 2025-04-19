@@ -1,6 +1,9 @@
-import os
 import ctypes
+import os
+import platform
 import sys
+from enum import Enum, auto
+
 import rpyc
 
 
@@ -25,3 +28,61 @@ def escape_path(path):
             raise Exception("Failed to get short path")
     else:
         return f'\\"{path}\\"'
+
+
+class IDABackendType(Enum):
+    IDA = auto()
+    IDAT = auto()
+    IDALIB = auto()
+
+
+def resolve_ida_path(path, bits=64):
+    IDA_BINARIES = {
+        "Windows": {
+            "idalib": "idalib64.dll",
+            "ida": ["ida64.exe", "ida.exe"],
+            "idat": ["idat64.exe", "idat.exe"],
+        },
+        "Linux": {
+            "idalib": "libidalib64.so",
+            "ida": ["ida64", "ida"],
+            "idat": ["idat64", "idat"],
+        },
+        "Darwin": {
+            "idalib": "libidalib64.dylib",
+            "ida": ["ida64", "ida"],
+            "idat": ["idat64", "idat"],
+        },
+    }
+
+    system = platform.system()
+    if system not in IDA_BINARIES:
+        raise ValueError(f"Unsupported platform: {system}")
+
+    binaries = IDA_BINARIES[system]
+
+    if os.path.isfile(path):
+        filename = os.path.basename(path)
+        if filename == binaries["idalib"]:
+            return IDABackendType.IDALIB, path
+        if filename in binaries["ida"]:
+            return IDABackendType.IDA, path
+        if filename in binaries["idat"]:
+            return IDABackendType.IDAT, path
+
+    elif os.path.isdir(path):
+        idalib_path = os.path.join(path, binaries["idalib"])
+        if os.path.exists(idalib_path):
+            return IDABackendType.IDALIB, idalib_path
+
+        idat_binary = binaries["idat"][0 if bits == 64 else 1]
+        idat_path = os.path.join(path, idat_binary)
+        if os.path.exists(idat_path):
+            return IDABackendType.IDAT, idat_path
+
+        ida_binary = binaries["ida"][0 if bits == 64 else 1]
+        ida_path = os.path.join(path, ida_binary)
+        if os.path.exists(ida_path):
+            return IDABackendType.IDA, ida_path
+
+    raise ValueError(f"Invalid IDA path: {path}")
