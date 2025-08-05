@@ -1,4 +1,6 @@
+import atexit
 import builtins
+import ctypes
 import os
 import shutil
 import site
@@ -6,7 +8,6 @@ import socket
 import subprocess
 import sys
 import tempfile
-from ctypes import cdll
 from typing import Optional
 
 import rpyc
@@ -77,6 +78,9 @@ class HeadlessIda:
         ftype: Optional[str] = None,
     ) -> None:
         self.backend_type, self.ida_path = resolve_ida_path(ida_dir, bits)
+        self.cleaned_up = False
+        atexit.register(self.clean_up)
+
         if self.backend_type == IDABackendType.IDALIB:
             return self._idalib_backend(
                 self.ida_path, binary_path, override_import, ftype=ftype
@@ -93,18 +97,45 @@ class HeadlessIda:
         override_import=True,
         ftype: Optional[str] = None,
     ):
-        sys.path.insert(
-            0, os.path.join(os.path.dirname(idalib_path), "python/3/ida_64")
-        )
-        sys.path.insert(1, os.path.join(os.path.dirname(idalib_path), "python/3"))
-        self.libida = cdll.LoadLibrary(idalib_path)
+        self.libida = ctypes.cdll.LoadLibrary(idalib_path)
         self.libida.init_library(0, None)
+
+        # check if get_library_version is available
+        if not hasattr(self.libida, "get_library_version"):
+            major, minor, build = 9, 0, 0
+        else:
+            major, minor, build = ctypes.c_int(), ctypes.c_int(), ctypes.c_int()
+            self.libida.get_library_version(
+                ctypes.byref(major), ctypes.byref(minor), ctypes.byref(build)
+            )
+            major, minor, build = major.value, minor.value, build.value
+
+        if major == 9 and minor == 0:
+            sys.path.insert(
+                0, os.path.join(os.path.dirname(idalib_path), "python/3/ida_64")
+            )
+            sys.path.insert(1, os.path.join(os.path.dirname(idalib_path), "python/3"))
+        else:
+            sys.path.insert(
+                0, os.path.join(os.path.dirname(idalib_path), "python/lib-dynload")
+            )
+            sys.path.insert(1, os.path.join(os.path.dirname(idalib_path), "python"))
+
         # TODO: idalib doesn't support saving database to other location, so we need to copy the file manually
         tempdir = tempfile.mkdtemp()
         shutil.copy(binary_path, tempdir)
-        self.libida.open_database(
-            str(os.path.join(tempdir, os.path.basename(binary_path))).encode(), True
-        )
+
+        if major == 9 and minor == 0:
+            self.libida.open_database(
+                str(os.path.join(tempdir, os.path.basename(binary_path))).encode(),
+                True,
+            )
+        else:
+            self.libida.open_database(
+                str(os.path.join(tempdir, os.path.basename(binary_path))).encode(),
+                True,
+                None,
+            )
 
     def _ida_backend(
         self, idat_path, binary_path, override_import=True, ftype: Optional[str] = None
@@ -171,11 +202,17 @@ class HeadlessIda:
     def import_module(self, mod):
         return self.conn.root.import_module(mod)
 
-    def __del__(self):
+    def clean_up(self):
+        if self.cleaned_up:
+            return
         if hasattr(self, "libida"):
-            self.libida.close_database()
+            self.libida.close_database(True)
         if hasattr(self, "conn"):
             self.conn.close()
+        self.cleaned_up = True
+
+    def __del__(self):
+        self.clean_up()
 
 
 class HeadlessIdaRemote(HeadlessIda):
