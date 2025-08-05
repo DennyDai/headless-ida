@@ -39,17 +39,17 @@ class IDABackendType(Enum):
 def resolve_ida_path(path, bits=64):
     IDA_BINARIES = {
         "Windows": {
-            "idalib": "idalib64.dll",
+            "idalib": ["idalib64.dll", "idalib.dll"],
             "ida": ["ida64.exe", "ida.exe"],
             "idat": ["idat64.exe", "idat.exe"],
         },
         "Linux": {
-            "idalib": "libidalib64.so",
+            "idalib": ["libidalib64.so", "libidalib.so"],
             "ida": ["ida64", "ida"],
             "idat": ["idat64", "idat"],
         },
         "Darwin": {
-            "idalib": "libidalib64.dylib",
+            "idalib": ["libidalib64.dylib", "libidalib.dylib"],
             "ida": ["ida64", "ida"],
             "idat": ["idat64", "idat"],
         },
@@ -63,7 +63,7 @@ def resolve_ida_path(path, bits=64):
 
     if os.path.isfile(path):
         filename = os.path.basename(path)
-        if filename == binaries["idalib"]:
+        if filename in binaries["idalib"]:
             return IDABackendType.IDALIB, path
         if filename in binaries["ida"]:
             return IDABackendType.IDA, path
@@ -71,9 +71,11 @@ def resolve_ida_path(path, bits=64):
             return IDABackendType.IDAT, path
 
     elif os.path.isdir(path):
-        idalib_path = os.path.join(path, binaries["idalib"])
-        if os.path.exists(idalib_path):
-            return IDABackendType.IDALIB, idalib_path
+        # Check for idalib variants
+        for idalib_binary in binaries["idalib"]:
+            idalib_path = os.path.join(path, idalib_binary)
+            if os.path.exists(idalib_path):
+                return IDABackendType.IDALIB, idalib_path
 
         idat_binary = binaries["idat"][0 if bits == 64 else 1]
         idat_path = os.path.join(path, idat_binary)
