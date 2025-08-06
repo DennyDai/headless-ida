@@ -7,6 +7,7 @@ import site
 import socket
 import subprocess
 import sys
+import importlib
 import tempfile
 from typing import Optional
 
@@ -200,7 +201,12 @@ class HeadlessIda:
         builtins.__import__ = ida_import
 
     def import_module(self, mod):
-        return self.conn.root.import_module(mod)
+        if hasattr(self, "libida"):
+            return importlib.import_module(mod)
+        if hasattr(self, "conn"):
+            return self.conn.root.import_module(mod)
+        else:
+            raise RuntimeError("No IDA backend initialized")
 
     def clean_up(self):
         if self.cleaned_up:
