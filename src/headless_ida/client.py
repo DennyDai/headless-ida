@@ -176,14 +176,20 @@ class HeadlessIda:
                 tempidb.write(f.read())
             tempidb.flush()
             binary_path = tempidb.name
-            command = f'"{idat_path}" -A -S"{escape_path(server_path)} {port}" -P+ "{binary_path}"'
+            command = f'"{idat_path}" -A -S"{escape_path(server_path)} {port}" -P+'
+            if ftype is not None:
+                command += f' -T "{ftype}"'
+            if processor is not None:
+                command += f' -p{processor}'
+            command += f' "{binary_path}"'
         else:
             tempidb = tempfile.NamedTemporaryFile()
-            command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" "{binary_path}"'
-        if ftype is not None:
-            command += f' -T "{ftype}"'
-        if processor is not None:
-            command += f' -p{processor}'
+            command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}"'
+            if ftype is not None:
+                command += f' -T "{ftype}"'
+            if processor is not None:
+                command += f' -p{processor}'
+            command += f' "{binary_path}"'
         p = subprocess.Popen(
             command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
