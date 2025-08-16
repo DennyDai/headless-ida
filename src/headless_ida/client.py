@@ -77,6 +77,7 @@ class HeadlessIda:
         override_import=True,
         bits=64,
         ftype: Optional[str] = None,
+        processor: Optional[str] = None,
     ) -> None:
         self.backend_type, self.ida_path = resolve_ida_path(ida_dir, bits)
         self.cleaned_up = False
@@ -84,11 +85,11 @@ class HeadlessIda:
 
         if self.backend_type == IDABackendType.IDALIB:
             return self._idalib_backend(
-                self.ida_path, binary_path, override_import, ftype=ftype
+                self.ida_path, binary_path, override_import, ftype=ftype, processor=processor
             )
         elif self.backend_type in [IDABackendType.IDA, IDABackendType.IDAT]:
             return self._ida_backend(
-                self.ida_path, binary_path, override_import, ftype=ftype
+                self.ida_path, binary_path, override_import, ftype=ftype, processor=processor
             )
 
     def _idalib_backend(
@@ -97,6 +98,7 @@ class HeadlessIda:
         binary_path,
         override_import=True,
         ftype: Optional[str] = None,
+        processor: Optional[str] = None,
     ):
         self.libida = ctypes.cdll.LoadLibrary(idalib_path)
         self.libida.init_library(0, None)
@@ -125,21 +127,36 @@ class HeadlessIda:
         # TODO: idalib doesn't support saving database to other location, so we need to copy the file manually
         tempdir = tempfile.mkdtemp()
         shutil.copy(binary_path, tempdir)
+        
+        target_file = os.path.join(tempdir, os.path.basename(binary_path))
 
         if major == 9 and minor == 0:
             self.libida.open_database(
-                str(os.path.join(tempdir, os.path.basename(binary_path))).encode(),
+                str(target_file).encode(),
                 True,
             )
         else:
-            self.libida.open_database(
-                str(os.path.join(tempdir, os.path.basename(binary_path))).encode(),
-                True,
-                None,
-            )
+            ida_args = []
+            if processor is not None:
+                ida_args.append(f'-p{processor}')
+            if ftype is not None:
+                ida_args.append(f'-T{ftype}')
+            if ida_args:
+                cmd_line = ' '.join(ida_args)
+                self.libida.open_database(
+                    str(target_file).encode(),
+                    True,
+                    cmd_line.encode(),
+                )
+            else:
+                self.libida.open_database(
+                    str(target_file).encode(),
+                    True,
+                    None,
+                )
 
     def _ida_backend(
-        self, idat_path, binary_path, override_import=True, ftype: Optional[str] = None
+        self, idat_path, binary_path, override_import=True, ftype: Optional[str] = None, processor: Optional[str] = None
     ) -> None:
         server_path = os.path.join(
             os.path.realpath(os.path.dirname(__file__)), "ida_script.py"
@@ -165,6 +182,8 @@ class HeadlessIda:
             command = f'"{idat_path}" -o"{tempidb.name}" -A -S"{escape_path(server_path)} {port}" "{binary_path}"'
         if ftype is not None:
             command += f' -T "{ftype}"'
+        if processor is not None:
+            command += f' -p{processor}'
         p = subprocess.Popen(
             command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -183,7 +202,7 @@ class HeadlessIda:
                     service=ForwardIO,
                     config={"sync_request_timeout": 60 * 60 * 24},
                 )
-            except:
+            except Exception:
                 continue
             break
 
