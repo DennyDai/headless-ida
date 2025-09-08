@@ -247,7 +247,9 @@ class HeadlessIda:
 
 
 class HeadlessIdaRemote(HeadlessIda):
-    def __init__(self, host, port, binary_path, override_import=True):
+    def __init__(self, host, port, binary_path, override_import=True, ftype=None, processor=None):
+        self.cleaned_up = False
+        atexit.register(self.clean_up)
         self.conn = rpyc.connect(
             host,
             int(port),
@@ -255,6 +257,6 @@ class HeadlessIdaRemote(HeadlessIda):
             config={"sync_request_timeout": 60 * 60 * 24},
         )
         with open(binary_path, "rb") as f:
-            self.conn.root.init(f.read())
+            self.conn.root.init(f.read(), ftype=ftype, processor=processor)
         if override_import:
             self.override_import()

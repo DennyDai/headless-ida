@@ -22,7 +22,7 @@ def headlessida_cli():
 
     if ":" in args.idat_path:
         host, port = args.idat_path.split(":")
-        headlessida = HeadlessIdaRemote(host, int(port), args.binary_path)
+        headlessida = HeadlessIdaRemote(host, int(port), args.binary_path, ftype=args.ftype, processor=args.processor)
     else:
         headlessida = HeadlessIda(args.idat_path, args.binary_path, ftype=args.ftype, processor=args.processor)
     headlessida_dict = {"headlessida": headlessida, "HeadlessIda": HeadlessIda}
