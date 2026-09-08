@@ -1,19 +1,57 @@
 import atexit
 import builtins
 import ctypes
+import importlib
+import inspect
+import pickle
 import os
 import shutil
 import site
 import socket
 import subprocess
 import sys
-import importlib
 import tempfile
+import textwrap
+import types
 from typing import Optional
 
 import rpyc
 
 from .helpers import ForwardIO, IDABackendType, escape_path, resolve_ida_path
+
+_BASELINE_PYTHONPATH = os.environ.get("PYTHONPATH", "")
+
+
+def _remote_function_source(function):
+    if not isinstance(function, types.FunctionType):
+        raise TypeError("HeadlessIda.run() requires a plain Python function")
+    if function.__code__.co_freevars:
+        raise ValueError(
+            "HeadlessIda.run() does not support functions with closures; "
+            "pass captured values as arguments"
+        )
+    if (
+        inspect.iscoroutinefunction(function)
+        or inspect.isasyncgenfunction(function)
+        or inspect.isgeneratorfunction(function)
+    ):
+        raise TypeError(
+            "HeadlessIda.run() only supports synchronous non-generator functions"
+        )
+
+    try:
+        source = inspect.getsource(function)
+    except (OSError, TypeError) as exc:
+        raise ValueError(
+            "HeadlessIda.run() could not retrieve the function source"
+        ) from exc
+
+    source = textwrap.dedent(source)
+    if source.lstrip().startswith("@"):
+        raise ValueError("HeadlessIda.run() does not support decorated functions")
+
+    # Preserve the original file and line in remote tracebacks.
+    return "\n" * (function.__code__.co_firstlineno - 1) + source
 
 
 class HeadlessIda:
@@ -85,11 +123,19 @@ class HeadlessIda:
 
         if self.backend_type == IDABackendType.IDALIB:
             return self._idalib_backend(
-                self.ida_path, binary_path, override_import, ftype=ftype, processor=processor
+                self.ida_path,
+                binary_path,
+                override_import,
+                ftype=ftype,
+                processor=processor,
             )
         elif self.backend_type in [IDABackendType.IDA, IDABackendType.IDAT]:
             return self._ida_backend(
-                self.ida_path, binary_path, override_import, ftype=ftype, processor=processor
+                self.ida_path,
+                binary_path,
+                override_import,
+                ftype=ftype,
+                processor=processor,
             )
 
     def _idalib_backend(
@@ -127,7 +173,7 @@ class HeadlessIda:
         # TODO: idalib doesn't support saving database to other location, so we need to copy the file manually
         tempdir = tempfile.mkdtemp()
         shutil.copy(binary_path, tempdir)
-        
+
         target_file = os.path.join(tempdir, os.path.basename(binary_path))
 
         if major == 9 and minor == 0:
@@ -138,11 +184,11 @@ class HeadlessIda:
         else:
             ida_args = []
             if processor is not None:
-                ida_args.append(f'-p{processor}')
+                ida_args.append(f"-p{processor}")
             if ftype is not None:
-                ida_args.append(f'-T{ftype}')
+                ida_args.append(f"-T{ftype}")
             if ida_args:
-                cmd_line = ' '.join(ida_args)
+                cmd_line = " ".join(ida_args)
                 self.libida.open_database(
                     str(target_file).encode(),
                     True,
@@ -156,7 +202,12 @@ class HeadlessIda:
                 )
 
     def _ida_backend(
-        self, idat_path, binary_path, override_import=True, ftype: Optional[str] = None, processor: Optional[str] = None
+        self,
+        idat_path,
+        binary_path,
+        override_import=True,
+        ftype: Optional[str] = None,
+        processor: Optional[str] = None,
     ) -> None:
         server_path = os.path.join(
             os.path.realpath(os.path.dirname(__file__)), "ida_script.py"
@@ -168,7 +219,7 @@ class HeadlessIda:
         os.environ["PYTHONPATH"] = (
             os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()])
             + os.pathsep
-            + os.environ.get("PYTHONPATH", "")
+            + _BASELINE_PYTHONPATH
         )
         if binary_path.endswith(".i64") or binary_path.endswith(".idb"):
             tempidb = tempfile.NamedTemporaryFile(suffix=binary_path[-4:])
@@ -180,7 +231,7 @@ class HeadlessIda:
             if ftype is not None:
                 command += f' -T "{ftype}"'
             if processor is not None:
-                command += f' -p{processor}'
+                command += f" -p{processor}"
             command += f' "{binary_path}"'
         else:
             tempidb = tempfile.NamedTemporaryFile()
@@ -188,7 +239,7 @@ class HeadlessIda:
             if ftype is not None:
                 command += f' -T "{ftype}"'
             if processor is not None:
-                command += f' -p{processor}'
+                command += f" -p{processor}"
             command += f' "{binary_path}"'
         p = subprocess.Popen(
             command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -233,6 +284,19 @@ class HeadlessIda:
         else:
             raise RuntimeError("No IDA backend initialized")
 
+    def run(self, function, *args, **kwargs):
+        source = _remote_function_source(function)
+        if hasattr(self, "libida"):
+            return function(*args, **kwargs)
+        result = self.conn.root.run_function(
+            source,
+            function.__name__,
+            args,
+            tuple(kwargs.items()),
+            function.__code__.co_filename,
+        )
+        return pickle.loads(result)
+
     def clean_up(self):
         if self.cleaned_up:
             return
@@ -247,7 +311,9 @@ class HeadlessIda:
 
 
 class HeadlessIdaRemote(HeadlessIda):
-    def __init__(self, host, port, binary_path, override_import=True, ftype=None, processor=None):
+    def __init__(
+        self, host, port, binary_path, override_import=True, ftype=None, processor=None
+    ):
         self.cleaned_up = False
         atexit.register(self.clean_up)
         self.conn = rpyc.connect(

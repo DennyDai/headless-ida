@@ -1,7 +1,7 @@
 import ctypes
 import importlib
+import pickle
 import os
-import shutil
 import site
 import socket
 import subprocess
@@ -12,10 +12,12 @@ import rpyc
 
 from .helpers import ForwardIO, IDABackendType, escape_path, resolve_ida_path
 
+_BASELINE_PYTHONPATH = os.environ.get("PYTHONPATH", "")
+
 
 def HeadlessIdaServer(idat_path):
     backend_type, ida_path = resolve_ida_path(idat_path)
-    
+
     # Check if trying to use idalib with the server
     if backend_type == IDABackendType.IDALIB:
         raise RuntimeError(
@@ -26,16 +28,20 @@ def HeadlessIdaServer(idat_path):
     class _HeadlessIdaServer(rpyc.Service):
         def exposed_init(self, binary, ftype=None, processor=None):
             if backend_type == IDABackendType.IDALIB:
-                return self._idalib_backend(ida_path, binary, ftype=ftype, processor=processor)
+                return self._idalib_backend(
+                    ida_path, binary, ftype=ftype, processor=processor
+                )
             elif backend_type in [IDABackendType.IDA, IDABackendType.IDAT]:
-                return self._ida_backend(ida_path, binary, ftype=ftype, processor=processor)
+                return self._ida_backend(
+                    ida_path, binary, ftype=ftype, processor=processor
+                )
 
         def _idalib_backend(self, idalib_path, binary, ftype=None, processor=None):
             # This should never be reached due to the check in HeadlessIdaServer()
             # but keeping as a safety check
             self.libida = ctypes.cdll.LoadLibrary(idalib_path)
             self.libida.init_library(0, None)
-            
+
             # check if get_library_version is available
             if not hasattr(self.libida, "get_library_version"):
                 major, minor, build = 9, 0, 0
@@ -45,24 +51,26 @@ def HeadlessIdaServer(idat_path):
                     ctypes.byref(major), ctypes.byref(minor), ctypes.byref(build)
                 )
                 major, minor, build = major.value, minor.value, build.value
-            
+
             if major == 9 and minor == 0:
                 sys.path.insert(
                     0, os.path.join(os.path.dirname(idalib_path), "python/3/ida_64")
                 )
-                sys.path.insert(1, os.path.join(os.path.dirname(idalib_path), "python/3"))
+                sys.path.insert(
+                    1, os.path.join(os.path.dirname(idalib_path), "python/3")
+                )
             else:
                 sys.path.insert(
                     0, os.path.join(os.path.dirname(idalib_path), "python/lib-dynload")
                 )
                 sys.path.insert(1, os.path.join(os.path.dirname(idalib_path), "python"))
-            
+
             # Create temp directory and save binary
             tempdir = tempfile.mkdtemp()
             binary_file = os.path.join(tempdir, "temp_binary")
-            with open(binary_file, 'wb') as f:
+            with open(binary_file, "wb") as f:
                 f.write(binary)
-            
+
             if major == 9 and minor == 0:
                 self.libida.open_database(
                     str(binary_file).encode(),
@@ -71,11 +79,11 @@ def HeadlessIdaServer(idat_path):
             else:
                 ida_args = []
                 if processor is not None:
-                    ida_args.append(f'-p{processor}')
+                    ida_args.append(f"-p{processor}")
                 if ftype is not None:
-                    ida_args.append(f'-T{ftype}')
+                    ida_args.append(f"-T{ftype}")
                 if ida_args:
-                    cmd_line = ' '.join(ida_args)
+                    cmd_line = " ".join(ida_args)
                     self.libida.open_database(
                         str(binary_file).encode(),
                         True,
@@ -105,7 +113,7 @@ def HeadlessIdaServer(idat_path):
             os.environ["PYTHONPATH"] = (
                 os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()])
                 + os.pathsep
-                + os.environ.get("PYTHONPATH", "")
+                + _BASELINE_PYTHONPATH
             )
             if binary_path.endswith(".i64") or binary_path.endswith(".idb"):
                 tempidb = tempfile.NamedTemporaryFile(suffix=binary_path[-4:])
@@ -117,7 +125,7 @@ def HeadlessIdaServer(idat_path):
                 if ftype is not None:
                     command += f' -T "{ftype}"'
                 if processor is not None:
-                    command += f' -p{processor}'
+                    command += f" -p{processor}"
                 command += f' "{binary_path}"'
             else:
                 tempidb = tempfile.NamedTemporaryFile()
@@ -125,7 +133,7 @@ def HeadlessIdaServer(idat_path):
                 if ftype is not None:
                     command += f' -T "{ftype}"'
                 if processor is not None:
-                    command += f' -p{processor}'
+                    command += f" -p{processor}"
                 command += f' "{binary_path}"'
             p = subprocess.Popen(
                 command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -145,7 +153,7 @@ def HeadlessIdaServer(idat_path):
                         service=ForwardIO,
                         config={"sync_request_timeout": 60 * 60 * 24},
                     )
-                except:
+                except Exception:
                     continue
                 break
 
@@ -155,6 +163,30 @@ def HeadlessIdaServer(idat_path):
                 return self.conn.root.import_module(mod)
             else:
                 return importlib.import_module(mod)
+
+        def exposed_run_function(
+            self,
+            source,
+            function_name,
+            args=(),
+            kwargs=(),
+            filename="<headless-ida>",
+        ):
+            if hasattr(self, "conn"):
+                return self.conn.root.run_function(
+                    source,
+                    function_name,
+                    args,
+                    kwargs,
+                    filename,
+                )
+            namespace = {
+                "__name__": "__headless_ida__",
+                "__file__": filename,
+            }
+            exec(compile(source, filename, "exec"), namespace, namespace)
+            result = namespace[function_name](*args, **dict(kwargs))
+            return pickle.dumps(result, protocol=4)
 
         def on_connect(self, conn):
             sys.stdout.write = conn.root.stdout_write

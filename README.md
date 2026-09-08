@@ -35,6 +35,23 @@ for func in idautils.Functions():
     print(f"{hex(func)} {ida_name.get_ea_name(func)}")
 ```
 
+### Run a function inside IDA
+`run()` executes a synchronous function in IDA and returns its pickleable result. Put imports inside the function.
+
+```python
+def analyze(prefix="", *, limit=100):
+    import idautils
+    import ida_name
+
+    return tuple(
+        (ea, ida_name.get_ea_name(ea))
+        for ea in idautils.Functions()
+        if ida_name.get_ea_name(ea).startswith(prefix)
+    )[:limit]
+
+result = headlessida.run(analyze, "sub_", limit=50)
+```
+
 ### Use it as a command line tool.
 ```bash
 # Interactive Console
